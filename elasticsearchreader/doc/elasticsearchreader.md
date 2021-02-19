@@ -10,109 +10,47 @@
 
 ## 2 实现原理
 
-使用elasticsearch的rest api接口， 批量读取elasticsearch的数据
+使用elasticsearch的rest api接口， 使用searchAfter查询数据
 
 ## 3 功能说明
 
 ### 3.1 配置样例
 
-#### es索引示例
-
-```
-{
-  "flow_id" : 590000001878,
-  "taches" : [
-    {
-      "tch_id" : 590000000750,
-      "flow_id" : 590000001878,
-      "tch_mod" : 5081
-    }
-  ],
-}
-```
-
 #### job.json
 
 ```
 {
-  "core": {
-    "container": {
-      "job": {
-        "reportInterval": 10000
-      },
-      "taskGroup": {
-        "channel": 5
-      },
-      "trace": {
-        "enable": "true"
-      }
-    }
-  },
   "job": {
     "setting": {
-      "speed": {
-        "byte": 10485760
-      },
-      "errorLimit": {
-        "record": 0,
-        "percentage": 0.02
-      }
-    },
+			"speed": {
+				"channel": 1
+			}
+	  },
     "content": [
       {
         "reader": {
           "name": "elasticsearchreader",
           "parameter": {
-            "endpoint": "http://192.168.17.190:9200",
-            "accessId": "xxxx",
-            "accessKey": "xxxx",
-            "index": "test-datax",
-            "type": "default",
+            "endpoints": "127.0.0.1:9200",
+            "accessId": "XXX",
+            "accessKey": "XXX",
+            "index": "test",
             "searchType": "dfs_query_then_fetch",
-            "headers": {
-            },
-            "scroll": "3m",
             "search": [
               {
-                "size": 5,
-                "query": {
-                  "bool": {
-                    "must": [
-                      {
-                        "match": {
-                          "_id": "590000001878"
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
+							  "sort": [
+							    {
+							      "id": {
+							        "order": "asc"
+							      }
+							    }
+							  ]
+							}
             ],
-            "table":{
-              "name": "TACHE",
-              "filter": "pk != null",
-              "nameCase": "UPPERCASE",
-              "column": [
-                {
-                  "name": "flow_id",
-                  "alias": "pk", 
-                },
-                {
-                  "name": "taches",
-                  "child": [
-                    {
-                      "name": "tch_id"
-                    },
-                    {
-                      "name": "tch_mod"
-                    },
-                    {
-                      "name": "flow_id"
-                    }
-                  ]
-                }
-              ]
-            }
+            "size": 100,
+            "excludes": ["wrapper_traffic"],
+            "includes": [],
+            "containsId": false
           }
         },
         "writer": {
@@ -130,10 +68,11 @@
 
 #### 3.2 参数说明
 
-* endpoint
+* endpoints
   * 描述：ElasticSearch的连接地址
   * 必选：是
   * 默认值：无
+  * 可以配置多个，多个只见使用,号隔开。如：127.0.0.1:9200,127.0.0.1:9201
 
 * accessId
   * 描述：http auth中的user
@@ -154,56 +93,39 @@
   * 描述：elasticsearch中index的type名
   * 必选：否
   * 默认值：index名
-
-* timeout
-  * 描述：客户端超时时间
-  * 必选：否
-  * 默认值：600000
-
-* discovery
-  * 描述：启用节点发现将(轮询)并定期更新客户机中的服务器列表。
-  * 必选：否
-  * 默认值：false
-
-* compression
-  * 描述：http请求，开启压缩
-  * 必选：否
-  * 默认值：true
-
-* multiThread
-  * 描述：http请求，是否有多线程
-  * 必选：否
-  * 默认值：true
-
+  
 * searchType
   * 描述：搜索类型
   * 必选：否
   * 默认值：dfs_query_then_fetch
- 
-* headers
-  * 描述：http请求头
-  * 必选：否
-  * 默认值：空
-  
-* scroll
-  * 描述：滚动分页配置
-  * 必选：否
-  * 默认值：空
 
 * search
   * 描述：json格式api搜索数据体
   * 必选：是
   * 默认值：[]
+  说明：因为查询是使用的searchAfter。所以search条件里面一定要加上sort排序规则
+    
+* size
+  * 描述：每次查询的数量。会覆盖search条件中设置的size
+  * 必选：否
+  * 默认值：10
 
-* table
-  * 描述: 数据读取规则配置，name命名，nameCase全局字段大小写，filter使用ognl表达式进行过滤
-  * 必选: 是
-  * 默认值: 无
+* excludes
+  * 描述：查询数据，排除指定字段。会覆盖search条件中设置的excludes
+  * 必选：否
+  * 默认值：[]
 
-* column
-  * 描述：需要读取的字段，name对应es文档的key，alias为最终记录的字段名如果为空则使用name，value表示字段为常量，child为嵌套对象
-  * 必选：是
-  * 默认值：无
+* includes
+  * 描述：查询数据，选择指定字段。会覆盖search条件中设置的includes
+  * 必选：否
+  * 默认值：[]
+  说明：空就是查询全部字段
+
+* containsId
+  * 描述：是否查询出es的索引_id
+  * 必选：否
+  * 默认值：false
+  说明：如果设置为true。则返回的数据第一个就是_id的值。在进行es数据同步时，如果想使用原来的_id，需要将这个值设置程true
 
 
 ## 4 性能报告
