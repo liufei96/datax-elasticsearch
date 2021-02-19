@@ -50,8 +50,9 @@ public class EsReader extends Reader {
              * 最佳实践：如果 Job 中有需要进行数据同步之前的处理，可以在此处完成，如果没有必要则可以直接去掉。
              */
             ESClient esClient = new ESClient();
-            esClient.createClient(Key.getHost(conf),
-                    Key.getPort(conf));
+            esClient.createClient(Key.getEndpoints(conf),
+                    Key.getAccessID(conf),
+                    Key.getAccessKey(conf));
 
             String indexName = Key.getIndexName(conf);
             String typeName = Key.getTypeName(conf);
@@ -101,18 +102,18 @@ public class EsReader extends Reader {
         private Configuration conf;
         ESClient esClient = null;
         private String index;
-        private String type;
         private SearchType searchType;
         private String query;
-        private String searchAfterId;
         private String[] includes;
         private String[] excludes;
         private int size;
+        private boolean containsId;
 
         @Override
         public void prepare() {
-            esClient.createClient(Key.getHost(conf),
-                    Key.getPort(conf));
+            esClient.createClient(Key.getEndpoints(conf),
+                    Key.getAccessID(conf),
+                    Key.getAccessKey(conf));
         }
 
         @Override
@@ -120,12 +121,12 @@ public class EsReader extends Reader {
             this.conf = super.getPluginJobConf();
             this.esClient = new ESClient();
             this.index = Key.getIndexName(conf);
-            this.type = Key.getTypeName(conf);
             this.searchType = Key.getSearchType(conf);
             this.query = Key.getQuery(conf);
             this.includes = Key.getIncludes(conf);
             this.excludes = Key.getExcludes(conf);
-            this.size = Key.getBatchSize(conf);
+            this.size = Key.getSize(conf);
+            this.containsId = Key.getContainsId(conf);
         }
 
         @Override
@@ -149,7 +150,7 @@ public class EsReader extends Reader {
             try {
                 searchResponse = esClient.getClient().search(searchRequest, RequestOptions.DEFAULT);
                 TotalHits totalHits = searchResponse.getHits().getTotalHits();
-                int total = (int)totalHits.value;
+                int total = (int) totalHits.value;
                 log.info("search total：{}, size: {} ", total, sourceBuilder.size());
                 if (total == 0) {
                     return;
@@ -203,7 +204,7 @@ public class EsReader extends Reader {
             if (StringUtils.isNotBlank(query)) {
                 log.info("search condition is : {} ", query);
                 SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
-                try (XContentParser parser = XContentFactory.xContent(XContentType.JSON).createParser(new NamedXContentRegistry(searchModule.getNamedXContents()),null, query)) {
+                try (XContentParser parser = XContentFactory.xContent(XContentType.JSON).createParser(new NamedXContentRegistry(searchModule.getNamedXContents()), null, query)) {
                     searchSourceBuilder.parseXContent(parser);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -218,30 +219,27 @@ public class EsReader extends Reader {
                 return false;
             }
             List<String> sources = Lists.newArrayList();
-            for (SearchHit hit: searchHits) {
+            for (SearchHit hit : searchHits) {
                 sources.add(hit.getSourceAsString());
             }
-            if (sources == null) {
-                sources = Collections.emptyList();
-            }
-            // log.info("search result: total={},maxScore={},hits={}", result.getTotal(), result.getMaxScore(), sources.size());
-            List<Map<String, Object>> recordMaps = new ArrayList<>();
-            for (String source : sources) {
-                Map<String, Object> parent = JSON.parseObject(source, LinkedHashMap.class);
-                recordMaps.add(parent);
-                this.transportOneRecord(recordSender, recordMaps);
-                recordMaps.clear();
+            Map<String, Object> recordMap = new LinkedHashMap<>();
+            for (SearchHit hit : searchHits) {
+                if (containsId) {
+                    recordMap.put("_id", hit.getId());
+                }
+                Map<String, Object> parent = JSON.parseObject(hit.getSourceAsString(), LinkedHashMap.class);
+                recordMap.putAll(parent);
+                this.transportOneRecord(recordSender, recordMap);
+                recordMap.clear();
             }
             return sources.size() > 0;
         }
 
 
-        private void transportOneRecord(RecordSender recordSender, List<Map<String, Object>> recordMaps) {
-            for (Map<String, Object> o : recordMaps) {
-                if (o.entrySet().stream().anyMatch(x -> x.getValue() != null)) {
-                    Record record = buildRecord(recordSender, o);
-                    recordSender.sendToWriter(record);
-                }
+        private void transportOneRecord(RecordSender recordSender, Map<String, Object> recordMap) {
+            if (recordMap.entrySet().stream().anyMatch(x -> x.getValue() != null)) {
+                Record record = buildRecord(recordSender, recordMap);
+                recordSender.sendToWriter(record);
             }
         }
 

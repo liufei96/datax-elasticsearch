@@ -1,7 +1,11 @@
 package com.alibaba.datax.plugin.reader.elasticsearchreader;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -20,10 +24,22 @@ public class ESClient {
 
     private RestHighLevelClient client = null;
 
-    public RestHighLevelClient createClient(String host, int port){
-        client = new RestHighLevelClient(RestClient.builder(
-                new HttpHost(host, port, "http")
-        ));
+    public RestHighLevelClient createClient(String endpoints, String username, String password){
+        // 账号密码认证
+        if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+            final BasicCredentialsProvider basicCredentialsProvider = new BasicCredentialsProvider();
+            basicCredentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        }
+
+        String[] endpointSplit = endpoints.split(",");
+        HttpHost[] hosts = new HttpHost[endpointSplit.length];
+        for (int i = 0; i < endpointSplit.length; i++) {
+            String[] ips = endpointSplit[0].split(":");
+            String ip = ips[0];
+            int port = Integer.parseInt(ips[1]);
+            hosts[i] = new HttpHost(ip, port, HttpHost.DEFAULT_SCHEME_NAME);
+        }
+        client =  new RestHighLevelClient(RestClient.builder(hosts));
         log.info("======= RestHighLevelClient 初始化成功 =======");
         return client;
     }

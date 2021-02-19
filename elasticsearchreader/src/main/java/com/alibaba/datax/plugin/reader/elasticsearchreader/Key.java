@@ -20,12 +20,8 @@ public final class Key {
         return SearchType.valueOf(searchType.toUpperCase());
     }
 
-    public static String getHost(Configuration conf) {
-        return conf.getNecessaryValue("host", ESReaderErrorCode.BAD_CONFIG_VALUE);
-    }
-
-    public static int getPort(Configuration conf) {
-        return conf.getInt("port", 9200);
+    public static String getEndpoints(Configuration conf) {
+        return conf.getNecessaryValue("endpoints", ESReaderErrorCode.BAD_CONFIG_VALUE);
     }
 
     public static String getAccessID(Configuration conf) {
@@ -36,7 +32,7 @@ public final class Key {
         return conf.getString("accessKey", "");
     }
 
-    public static int getBatchSize(Configuration conf) {
+    public static int getSize(Configuration conf) {
         return conf.getInt("size", 10);
     }
 
@@ -139,5 +135,9 @@ public final class Key {
             return excludes.toArray(new String[0]);
         }
         return null;
+    }
+
+    public static boolean getContainsId(Configuration conf) {
+        return conf.getBool("containsId", false);
     }
 }
