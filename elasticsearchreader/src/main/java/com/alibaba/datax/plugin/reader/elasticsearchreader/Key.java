@@ -41,7 +41,7 @@ public final class Key {
     }
 
     public static int getTimeout(Configuration conf) {
-        return conf.getInt("timeout", 600000);
+        return conf.getInt("timeout", 60000);
     }
 
     public static boolean isCleanup(Configuration conf) {

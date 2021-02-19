@@ -43,6 +43,7 @@
 						}]
 					}],
 					"size": 100,
+					timeout: 60000,
 					"excludes": ["wrapper_traffic"],
 					"includes": [],
 					"containsId": false
@@ -99,6 +100,11 @@
   * 描述：每次查询的数量。会覆盖search条件中设置的size
   * 必选：否
   * 默认值：10
+
+* timeout
+  * 描述：客户端超时时间
+  * 必选：否
+  * 默认值：600000
 
 * excludes
   * 描述：查询数据，排除指定字段。会覆盖search条件中设置的excludes

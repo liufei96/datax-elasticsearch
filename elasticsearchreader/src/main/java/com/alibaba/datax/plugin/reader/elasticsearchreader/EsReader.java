@@ -17,6 +17,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -31,10 +32,11 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author liufei mail:1583409404@qq.com
- * @date 2020-04-14 10:32
+ * @date 2021-02-19 10:32
  */
 @SuppressWarnings(value = {"unchecked"})
 public class EsReader extends Reader {
@@ -108,6 +110,7 @@ public class EsReader extends Reader {
         private String[] excludes;
         private int size;
         private boolean containsId;
+        private long timeout;
 
         @Override
         public void prepare() {
@@ -127,6 +130,7 @@ public class EsReader extends Reader {
             this.excludes = Key.getExcludes(conf);
             this.size = Key.getSize(conf);
             this.containsId = Key.getContainsId(conf);
+            this.timeout = Key.getTimeout(conf);
         }
 
         @Override
@@ -139,6 +143,7 @@ public class EsReader extends Reader {
             sourceBuilder.trackTotalHits(true);
             sourceBuilder.fetchSource(includes, excludes);
             sourceBuilder.size(size);
+            sourceBuilder.timeout(new TimeValue(timeout, TimeUnit.MILLISECONDS));
             // 使用searchAfter需要指定排序规则
             searchRequest.searchType(searchType.toString());
             searchRequest.source(sourceBuilder);
