@@ -7,7 +7,7 @@ datax的elasticsearch插件，主要是reader插件，writer插件官网已经�
 
 ### 1.  下载Datax
 
-[DataX下载地址](http://datax-opensource.oss-cn-hangzhou.aliyuncs.com/datax.tar.gz)
+[Datax下载地址](http://datax-opensource.oss-cn-hangzhou.aliyuncs.com/datax.tar.gz)
 
 [Datax的github地址](https://github.com/alibaba/DataX)
 
