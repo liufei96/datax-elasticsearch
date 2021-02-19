@@ -7,8 +7,8 @@ datax的elasticsearch插件，主要是reader插件，writer插件官网已经�
 
 ### 1.  下载Datax
 
-[DataX下载地址]: http://datax-opensource.oss-cn-hangzhou.aliyuncs.com/datax.tar.gz
-[Datax的github地址]: https://github.com/alibaba/DataX
+[DataX下载地址](http://datax-opensource.oss-cn-hangzhou.aliyuncs.com/datax.tar.gz)
+[Datax的github地址](https://github.com/alibaba/DataX)
 
 
 
@@ -53,9 +53,7 @@ $ cd  {DataX_source_code_home}
 $ mvn -U clean package assembly:assembly -Dmaven.test.skip=true
 ```
 
-详细内容可参考
-
-[官方文档]: https://github.com/alibaba/DataX/blob/master/userGuid.md
+详细内容可参考[官方文档](https://github.com/alibaba/DataX/blob/master/userGuid.md)
 
 
 
