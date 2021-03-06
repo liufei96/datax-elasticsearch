@@ -8,6 +8,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.slf4j.Logger;
@@ -25,11 +26,6 @@ public class ESClient {
     private RestHighLevelClient client = null;
 
     public RestHighLevelClient createClient(String endpoints, String username, String password){
-        // 账号密码认证
-        if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
-            final BasicCredentialsProvider basicCredentialsProvider = new BasicCredentialsProvider();
-            basicCredentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
-        }
 
         String[] endpointSplit = endpoints.split(",");
         HttpHost[] hosts = new HttpHost[endpointSplit.length];
@@ -39,7 +35,14 @@ public class ESClient {
             int port = Integer.parseInt(ips[1]);
             hosts[i] = new HttpHost(ip, port, HttpHost.DEFAULT_SCHEME_NAME);
         }
-        client =  new RestHighLevelClient(RestClient.builder(hosts));
+        RestClientBuilder builder = RestClient.builder(hosts);
+        // 账号密码认证
+        if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+            final BasicCredentialsProvider basicCredentialsProvider = new BasicCredentialsProvider();
+            basicCredentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+            builder.setHttpClientConfigCallback(f -> f.setDefaultCredentialsProvider(basicCredentialsProvider));
+        }
+        client =  new RestHighLevelClient(builder);
         log.info("======= RestHighLevelClient 初始化成功 =======");
         return client;
     }
