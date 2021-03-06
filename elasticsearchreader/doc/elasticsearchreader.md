@@ -43,7 +43,7 @@
 						}]
 					}],
 					"size": 100,
-					timeout: 60000,
+					"timeout": 60000,
 					"excludes": ["wrapper_traffic"],
 					"includes": [],
 					"containsId": false
